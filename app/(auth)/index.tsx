@@ -15,7 +15,7 @@ const Index = () => {
     <View style={styles.container}>
       <View style={{ marginBottom: 450 }}>
         <Text style={[styles.welcomeText, { fontSize: 30, paddingBottom: 20 }]}>
-          Welcome Back!
+          Welcome User!
         </Text>
         <Text style={styles.welcomeText}>Let's get started!</Text>
       </View>

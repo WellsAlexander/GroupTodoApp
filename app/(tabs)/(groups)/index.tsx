@@ -4,8 +4,8 @@ import {
   FlatList,
   TouchableOpacity,
   Text,
-  SafeAreaView,
   View,
+  Modal,
   Alert,
 } from "react-native";
 import React, { useState, useEffect } from "react";
@@ -23,12 +23,13 @@ import { getAuth } from "firebase/auth";
 import { useRouter } from "expo-router";
 
 export default function TabsRootScreen() {
-  const [groupName, setGroupName] = useState("");
+  const [groupInput, setGroupInput] = useState("");
   const [groups, setGroups] = useState<any>([]);
   const auth = getAuth();
   const user = auth.currentUser;
   const groupsCollection = collection(db, "groups");
   const router = useRouter();
+  const [openModal, setOpenModal] = useState(false);
 
   useEffect(() => {
     fetchUserGroups();
@@ -47,10 +48,11 @@ export default function TabsRootScreen() {
 
   // Create a new group if the name is unique
   const createGroup = async () => {
-    if (!user || groupName.trim() === "") return;
+    setOpenModal(false);
+    if (!user || groupInput.trim() === "") return;
 
     // Check if group name already exists
-    const q = query(groupsCollection, where("name", "==", groupName));
+    const q = query(groupsCollection, where("name", "==", groupInput));
     const existingGroups = await getDocs(q);
 
     if (!existingGroups.empty) {
@@ -58,25 +60,38 @@ export default function TabsRootScreen() {
       return;
     }
 
+    // Generate a unique 6-digit code
+    let groupCode;
+    let codeExists = true;
+    while (codeExists) {
+      groupCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const codeQuery = query(groupsCollection, where("code", "==", groupCode));
+      const codeDocs = await getDocs(codeQuery);
+      codeExists = !codeDocs.empty;
+    }
+
     // Create new group
     await addDoc(groupsCollection, {
-      name: groupName,
+      name: groupInput,
+      code: groupCode,
       members: [user.uid],
+      activeTasks: 0,
     });
 
-    setGroupName("");
+    setGroupInput("");
     fetchUserGroups();
   };
 
-  // Join an existing group if the name exists
+  // Join an existing group if the code exists
   const joinGroup = async () => {
-    if (!user || groupName.trim() === "") return;
+    setOpenModal(false);
+    if (!user || groupInput.trim() === "") return;
 
-    const q = query(groupsCollection, where("name", "==", groupName));
+    const q = query(groupsCollection, where("code", "==", groupInput));
     const data = await getDocs(q);
 
     if (data.empty) {
-      Alert.alert("Group not found", "Please check the group name.");
+      Alert.alert("Group not found", "Please check the group code.");
       return;
     }
 
@@ -95,31 +110,94 @@ export default function TabsRootScreen() {
       members: [...groupData.members, user.uid],
     });
 
-    setGroupName("");
+    setGroupInput("");
     fetchUserGroups();
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <Text style={styles.mainTitle}>Your Groups</Text>
-
-        {/* Create/Join Group Input */}
-        <View style={styles.inputContainer}>
-          <TextInput
-            placeholder="Enter Group Name"
-            value={groupName}
-            onChangeText={(text) => setGroupName(text)}
-            style={styles.input}
-          />
-          <TouchableOpacity style={styles.addButton} onPress={createGroup}>
-            <Text style={styles.buttonText}>Create</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.joinButton} onPress={joinGroup}>
-            <Text style={styles.buttonText}>Join</Text>
-          </TouchableOpacity>
+    <View style={styles.container}>
+      <Modal visible={openModal} animationType="fade" transparent={true}>
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContainer}>
+            <View
+              style={{ flexDirection: "row", justifyContent: "space-between" }}
+            >
+              <Text
+                style={{
+                  fontSize: 20,
+                  marginRight: 10,
+                }}
+              >
+                Add Group
+              </Text>
+              <TouchableOpacity onPress={() => setOpenModal(false)}>
+                <Text
+                  style={{
+                    color: "#ff6d00",
+                    fontWeight: 500,
+                    fontSize: 25,
+                    marginRight: 10,
+                  }}
+                >
+                  x
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.inputContainer}></View>
+            <TextInput
+              style={styles.input}
+              placeholder="Group Name or Code"
+              placeholderTextColor={"#ccc"}
+              value={groupInput}
+              onChangeText={setGroupInput}
+            />
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginTop: 20,
+              }}
+            >
+              <TouchableOpacity style={styles.addButton} onPress={createGroup}>
+                <Text style={styles.buttonText}>Create</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.joinButton} onPress={joinGroup}>
+                <Text style={styles.buttonText}>Join</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
+      </Modal>
 
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingHorizontal: 20,
+          paddingVertical: 15,
+          marginTop: 100,
+        }}
+      >
+        <Text style={styles.mainTitle}>Your Groups</Text>
+        <TouchableOpacity
+          style={{
+            borderRadius: 6,
+            backgroundColor: "white",
+            justifyContent: "center",
+            alignItems: "center",
+            width: 40,
+            height: 40,
+            marginRight: 10,
+          }}
+          onPress={() => setOpenModal(true)}
+        >
+          <Text style={{ color: "#ff6d00", fontWeight: 500, fontSize: 25 }}>
+            +
+          </Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.groupListContainer}>
         {/* List of groups the user has joined */}
         <FlatList
           data={groups}
@@ -128,69 +206,98 @@ export default function TabsRootScreen() {
               style={styles.groupItem}
               onPress={() => router.replace(`/todoScreen?groupId=${item.id}`)}
             >
-              <Text style={styles.groupText}>{item.name}</Text>
+              <View>
+                <Text style={styles.groupText}>{item.name}</Text>
+                <Text style={styles.groupLightText}>Today</Text>
+              </View>
+              <View>
+                <Text style={styles.groupLightText}>
+                  {item.members.length} members
+                </Text>
+                <Text style={styles.groupLightText}>{`0 active tasks`}</Text>
+              </View>
             </TouchableOpacity>
           )}
           keyExtractor={(item) => item.id}
         />
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  modalBackground: {
     flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContainer: {
+    marginTop: 300,
+    padding: 30,
+    marginHorizontal: 20,
     backgroundColor: "#fff",
+    borderRadius: 40,
   },
   container: {
     flex: 1,
+    backgroundColor: "#7b2cbf",
+  },
+  groupListContainer: {
+    flexGrow: 1,
     padding: 20,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    backgroundColor: "#fff",
   },
   mainTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
-    marginBottom: 20,
+    color: "#fff",
+    paddingLeft: 5,
   },
   inputContainer: {
     flexDirection: "row",
     marginBottom: 20,
   },
   input: {
-    flex: 1,
     borderColor: "#ccc",
     borderWidth: 1,
     padding: 10,
-    borderRadius: 5,
+    borderRadius: 10,
   },
   addButton: {
-    backgroundColor: "#007BFF",
-    padding: 10,
-    borderRadius: 5,
-    marginLeft: 10,
-    justifyContent: "center",
+    flexGrow: 1,
+    alignItems: "center",
+    backgroundColor: "#ff8500",
+    padding: 20,
+    borderRadius: 10,
+    marginRight: 10,
   },
   joinButton: {
-    backgroundColor: "#28A745",
-    padding: 10,
-    borderRadius: 5,
-    marginLeft: 10,
-    justifyContent: "center",
+    flexGrow: 1,
+    alignItems: "center",
+    backgroundColor: "#ff8500",
+    padding: 20,
+    borderRadius: 10,
   },
   buttonText: {
     color: "#fff",
     fontWeight: "bold",
   },
   groupItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
-    backgroundColor: "#f8f9fa",
-    marginBottom: 5,
-    borderRadius: 5,
+    backgroundColor: "#F5F5F5",
+    marginBottom: 10,
+    borderRadius: 12,
   },
   groupText: {
-    fontSize: 18,
+    fontSize: 25,
     fontWeight: "bold",
+  },
+  groupLightText: {
+    marginTop: 5,
+    fontSize: 14,
+    color: "#888",
   },
 });

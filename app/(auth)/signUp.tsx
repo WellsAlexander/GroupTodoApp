@@ -16,6 +16,11 @@ const SignUp = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const signUp = async () => {
+    if (password !== confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
+
     try {
       const user = await createUserWithEmailAndPassword(auth, email, password);
       if (user) router.replace("../(tabs)");

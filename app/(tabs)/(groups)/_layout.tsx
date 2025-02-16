@@ -6,6 +6,7 @@ const _layout = () => {
     <Stack
       screenOptions={{
         headerShown: false,
+        statusBarBackgroundColor: "#7b2cbf",
       }}
     >
       <Stack.Screen name="index" />

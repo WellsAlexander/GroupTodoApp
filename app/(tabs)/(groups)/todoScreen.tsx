@@ -6,6 +6,7 @@ import {
   Text,
   SafeAreaView,
   View,
+  Alert,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { db } from "../../../firebaseConfig";
@@ -17,7 +18,9 @@ import {
   doc,
   query,
   where,
-  onSnapshot, // Import real-time listener
+  onSnapshot,
+  getDoc,
+  arrayRemove,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -25,24 +28,36 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 export default function TodosScreen() {
   const [task, setTask] = useState("");
   const [todos, setTodos] = useState<any[]>([]);
+  const [groupName, setGroupName] = useState<string>("");
+  const [groupCode, setGroupCode] = useState<string>("");
+
   const auth = getAuth();
   const user = auth.currentUser;
   const router = useRouter();
+  const { groupId } = useLocalSearchParams();
 
-  const { groupId } = useLocalSearchParams(); // Get groupId from URL params
   const todosCollection = collection(db, "todos");
+  const groupDocRef = doc(db, "groups", groupId as string);
 
   useEffect(() => {
     if (!user || !groupId) return;
 
-    const q = query(todosCollection, where("groupId", "==", groupId));
+    const fetchGroupDetails = async () => {
+      const groupSnap = await getDoc(groupDocRef);
+      if (groupSnap.exists()) {
+        setGroupName(groupSnap.data().name);
+        setGroupCode(groupSnap.data().code);
+      }
+    };
 
-    // 🔥 Real-time listener
+    fetchGroupDetails();
+
+    const q = query(todosCollection, where("groupId", "==", groupId));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setTodos(snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
     });
 
-    return () => unsubscribe(); // Cleanup listener when component unmounts
+    return () => unsubscribe();
   }, [user, groupId]);
 
   const addTodo = async () => {
@@ -67,14 +82,45 @@ export default function TodosScreen() {
     await deleteDoc(todoDoc);
   };
 
+  const leaveGroup = async () => {
+    if (!user || !groupId) return;
+
+    Alert.alert("Leave Group", "Are you sure you want to leave this group?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Leave",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await updateDoc(groupDocRef, {
+              members: arrayRemove(user.uid),
+            });
+            router.replace("../(groups)/");
+          } catch (error) {
+            console.error("Error leaving group:", error);
+          }
+        },
+      },
+    ]);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <Text style={styles.mainTitle}>Group Todos</Text>
+        {/* Group Info - Name and Leave Button */}
+        <View style={styles.groupInfoContainer}>
+          <Text style={styles.mainTitle}>{groupName} Todos</Text>
+          <TouchableOpacity style={styles.leaveButton} onPress={leaveGroup}>
+            <Text style={styles.leaveButtonText}>Leave</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.groupCode}>Group Code: {groupCode}</Text>
+
         <TouchableOpacity onPress={() => router.replace("../(groups)/")}>
           <Text style={styles.backButton}>← Back to Groups</Text>
         </TouchableOpacity>
 
+        {/* Task Input */}
         <View style={styles.inputContainer}>
           <TextInput
             placeholder="New Task"
@@ -87,6 +133,7 @@ export default function TodosScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Task List */}
         <FlatList
           data={todos}
           renderItem={({ item }) => (
@@ -131,9 +178,20 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
+  groupInfoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 5,
+  },
   mainTitle: {
     fontSize: 24,
     fontWeight: "bold",
+    flexShrink: 1,
+  },
+  groupCode: {
+    fontSize: 16,
+    color: "#555",
     marginBottom: 20,
   },
   backButton: {
@@ -175,5 +233,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#007BFF",
     padding: 10,
     borderRadius: 5,
+  },
+  leaveButton: {
+    backgroundColor: "red",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 5,
+  },
+  leaveButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
 });

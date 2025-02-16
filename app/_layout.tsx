@@ -23,7 +23,13 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerShown: false, gestureEnabled: false }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          gestureEnabled: false,
+          statusBarBackgroundColor: "#7b2cbf",
+        }}
+      >
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
