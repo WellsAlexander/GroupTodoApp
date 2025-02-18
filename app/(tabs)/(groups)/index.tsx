@@ -30,20 +30,45 @@ export default function TabsRootScreen() {
   const groupsCollection = collection(db, "groups");
   const router = useRouter();
   const [openModal, setOpenModal] = useState(false);
+  const [refreshing, setRefreshing] = useState(false); // Add refreshing state
 
   useEffect(() => {
-    fetchUserGroups();
+    if (user) {
+      fetchUserGroups();
+    }
   }, [user]);
 
   // Fetch groups the user has joined
   const fetchUserGroups = async () => {
     if (!user) return;
+
+    setRefreshing(true); // Show refresh indicator
+
     const q = query(
       groupsCollection,
       where("members", "array-contains", user.uid)
     );
     const data = await getDocs(q);
-    setGroups(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
+    const fetchedGroups = data.docs.map((doc) => ({
+      ...doc.data(),
+      id: doc.id,
+    }));
+
+    // Fetch active tasks count for each group
+    const updatedGroups = await Promise.all(
+      fetchedGroups.map(async (group) => {
+        const todosQuery = query(
+          collection(db, "todos"),
+          where("groupId", "==", group.id),
+          where("completed", "==", false)
+        );
+        const todosSnapshot = await getDocs(todosQuery);
+        return { ...group, activeTasks: todosSnapshot.size };
+      })
+    );
+
+    setGroups(updatedGroups);
+    setRefreshing(false); // Hide refresh indicator
   };
 
   // Create a new group if the name is unique
@@ -214,11 +239,15 @@ export default function TabsRootScreen() {
                 <Text style={styles.groupLightText}>
                   {item.members.length} members
                 </Text>
-                <Text style={styles.groupLightText}>{`0 active tasks`}</Text>
+                <Text
+                  style={styles.groupLightText}
+                >{`${item.activeTasks} active tasks`}</Text>
               </View>
             </TouchableOpacity>
           )}
           keyExtractor={(item) => item.id}
+          refreshing={refreshing} // Attach refreshing state
+          onRefresh={fetchUserGroups} // Attach onRefresh function
         />
       </View>
     </View>

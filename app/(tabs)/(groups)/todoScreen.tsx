@@ -105,7 +105,7 @@ export default function TodosScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <View style={styles.container}>
         {/* Group Info - Name and Leave Button */}
         <View style={styles.groupInfoContainer}>
@@ -165,18 +165,22 @@ export default function TodosScreen() {
           keyExtractor={(item) => item.id}
         />
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#7b2cbf",
   },
   container: {
     flex: 1,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    marginTop: 100,
     padding: 20,
+    backgroundColor: "#fff",
   },
   groupInfoContainer: {
     flexDirection: "row",
