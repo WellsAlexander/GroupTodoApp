@@ -4,7 +4,6 @@ import {
   FlatList,
   Alert,
   TouchableOpacity,
-  SafeAreaView,
   Text,
   View,
 } from "react-native";
@@ -109,7 +108,7 @@ export default function StorageScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <View style={styles.container}>
         <Text style={styles.title}>Storage</Text>
         <TouchableOpacity style={styles.button} onPress={pickImage}>
@@ -139,19 +138,23 @@ export default function StorageScreen() {
           keyExtractor={(item, index) => index.toString()}
         />
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#7b2cbf",
   },
   container: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "#fff",
+    marginTop: 45,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
     padding: 20,
   },
   title: {
@@ -160,7 +163,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   button: {
-    backgroundColor: "#007BFF",
+    backgroundColor: "#7b2cbf",
     padding: 10,
     borderRadius: 5,
     marginTop: 10,

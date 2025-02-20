@@ -123,7 +123,8 @@ export default function TodosScreen() {
         {/* Task Input */}
         <View style={styles.inputContainer}>
           <TextInput
-            placeholder="New Task"
+            placeholder="Write a new task here..."
+            placeholderTextColor="gray"
             value={task}
             onChangeText={(text) => setTask(text)}
             style={styles.input}
@@ -200,7 +201,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     fontSize: 16,
-    color: "#007BFF",
+    color: "#ff6d0",
     marginBottom: 10,
   },
   inputContainer: {
@@ -215,7 +216,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   addButton: {
-    backgroundColor: "#007BFF",
+    backgroundColor: "#7b2cbf",
     padding: 10,
     borderRadius: 5,
     marginLeft: 10,
@@ -234,12 +235,12 @@ const styles = StyleSheet.create({
   },
   button: {
     marginLeft: 10,
-    backgroundColor: "#007BFF",
+    backgroundColor: "#7b2cbf",
     padding: 10,
     borderRadius: 5,
   },
   leaveButton: {
-    backgroundColor: "red",
+    backgroundColor: "#ff8500",
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 5,

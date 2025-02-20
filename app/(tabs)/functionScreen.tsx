@@ -1,12 +1,6 @@
 // Import TouchableOpacity from react-native
 import React, { useState } from "react";
-import {
-  SafeAreaView,
-  StyleSheet,
-  TouchableOpacity,
-  Text,
-  View,
-} from "react-native";
+import { StyleSheet, TouchableOpacity, Text, View } from "react-native";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { app } from "../../firebaseConfig";
 
@@ -26,7 +20,7 @@ export default function FunctionScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <View style={styles.container}>
         <Text style={styles.title}>Functions</Text>
         <Text style={styles.text}>{functionResult}</Text>
@@ -37,20 +31,23 @@ export default function FunctionScreen() {
           <Text style={styles.buttonText}>Call Hello World Function</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#7b2cbf",
   },
   container: {
     flex: 1,
+    marginTop: 45,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
     justifyContent: "center",
     alignItems: "center",
-    padding: 16,
+    backgroundColor: "#fff",
   },
   title: {
     fontSize: 24,
@@ -59,12 +56,13 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 18,
-    marginBottom: 16,
+    marginBottom: 10,
   },
   button: {
-    backgroundColor: "#007bff",
+    backgroundColor: "#7b2cbf",
     padding: 12,
     borderRadius: 8,
+    marginBottom: 50,
   },
   buttonText: {
     color: "#fff",

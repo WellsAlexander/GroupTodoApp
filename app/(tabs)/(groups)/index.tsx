@@ -201,7 +201,7 @@ export default function TabsRootScreen() {
           alignItems: "center",
           paddingHorizontal: 20,
           paddingVertical: 15,
-          marginTop: 100,
+          marginTop: 45,
         }}
       >
         <Text style={styles.mainTitle}>Your Groups</Text>
